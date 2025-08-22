@@ -8,7 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <toml++/toml.hpp>
 
-#include "command.h"
+#include "process_msg.hpp"
 /* This is a simple WebSocket echo server example.
  * You may compile it with "WITH_OPENSSL=1 make" or with "make" */
 
@@ -49,9 +49,11 @@ int main() {
             //std::cout << message << "\n";
             //ws->send(message, opCode, false);
             auto msg = json::parse(message);
-            std::cout << msg.dump(4) << std::endl;
+            if (!((msg["post_type"] == "meta_event") && (msg["meta_event_type"] == "heartbeat"))){
+                std::cout << msg.dump(4) << std::endl;
+            }
             if (msg["post_type"] == "message"){
-                json resp_msg = ProcessCommand(msg);
+                json resp_msg = ProcessMsg(msg);
                 if (!resp_msg.empty()){
                     std::cout << resp_msg.dump(4) << std::endl;
                     ws->send(resp_msg.dump());

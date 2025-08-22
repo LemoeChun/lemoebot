@@ -4,4 +4,4 @@
 
 using json = nlohmann::json;
 
-json ProcessCommand(json &msg);
+json ProcessMsg(json &msg);

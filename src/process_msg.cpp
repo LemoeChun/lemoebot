@@ -1,14 +1,18 @@
+#include <cpr/cprtypes.h>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iostream>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <unordered_map>
 #include <cstdlib>
 
 #include <yaml-cpp/yaml.h>
+#include <cpr/cpr.h>
 
-#include "command.h"
+#include "process_msg.hpp"
 
 void about(json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["message"][0]["type"] = "text";
@@ -61,21 +65,21 @@ void get_file(json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["file"] = arg;
 }
 **/
-json ProcessCommand(json &msg){
+json ProcessMsg(json &msg){
     auto raw_message = std::string(msg["raw_message"]);
     std::string command,arg;
     std::unordered_map<std::string, std::function<void(json&,json&,std::string&)>> commands;
     commands["about"] = about;
     commands["jm"] = jm;
 //    commands["get_file"] = get_file;
-    if (raw_message[0] == '>'){
-        json resp_msg;
-        resp_msg["action"] = "send_msg";
-        resp_msg["params"]["message_type"] = msg["message_type"];
-        if (msg["message_type"]=="group"){
-            resp_msg["params"]["group_id"] = msg["group_id"];
-        }
+    json resp_msg;
+    resp_msg["action"] = "send_msg";
+    resp_msg["params"]["message_type"] = msg["message_type"];
+    if (msg["message_type"]=="group"){
+        resp_msg["params"]["group_id"] = msg["group_id"];
+    }
         resp_msg["params"]["user_id"] = msg["user_id"];
+    if (raw_message[0] == '>'){
         size_t first_space = raw_message.find(" ");
         if (first_space != std::string::npos){
             command = raw_message.substr(1,first_space-1);
@@ -87,6 +91,19 @@ json ProcessCommand(json &msg){
         commands[command](resp_msg,msg,arg);
         return resp_msg;
     };
+    if (msg["message"][0]["type"] == "json"){
+        auto json_msg_data = nlohmann::json::parse(std::string(msg["message"][0]["data"]["data"]));
+        std::cout<< json_msg_data.dump(4) << "\n";
+        std::string url = cpr::Get(cpr::Url{json_msg_data["meta"]["detail_1"]["qqdocurl"]}).url.str();
+        std::cout << url << "\n";
+        url = url.substr(0,url.find("?"));
+        std::cout << url << "\n";
+        resp_msg["params"]["message"][0]["type"] = "reply" ;
+        resp_msg["params"]["message"][0]["data"]["id"] = std::to_string(int(msg["message_id"])) ;
+        resp_msg["params"]["message"][1]["type"] = "text" ;
+        resp_msg["params"]["message"][1]["data"]["text"] = "标题： " + std::string(json_msg_data["meta"]["detail_1"]["desc"]) + "\n\n" + "链接： " + url;
+        return resp_msg;
+    }
     
     return nlohmann::json();
 }
