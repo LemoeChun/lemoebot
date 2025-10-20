@@ -1,4 +1,5 @@
 #include <cpr/cprtypes.h>
+#include <cpr/response.h>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -14,12 +15,48 @@
 
 #include "process_msg.hpp"
 
-void about(json &resp_msg,json &msg,std::string &arg){
+using Toml = toml::table;
+void about(Toml& config,json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["message"][0]["type"] = "text";
     resp_msg["params"]["message"][0]["data"]["text"] = "你好喵，这里是帕酱～";
 }
+void DownloadAudio(Toml &config,json &resp_msg,json &msg,std::string &arg){
+    std::string AudioDir = config["Bot"]["download_dir"].value_or("bot");
+    std::filesystem::remove_all("/home/lemoechun/bot/audio/");
 
-void jm(json &resp_msg,json &msg,std::string &arg){
+    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp3 --force-overwrites -o /home/lemoechun/bot/audio/%\\(title\\)s.%\\(ext\\)s ").append(arg).c_str())) !=0 ){
+        resp_msg["params"]["message"][0]["type"] = "text";
+        resp_msg["params"]["message"][0]["data"]["text"] = "嗝儿～音频被吃掉了喵～";
+        return;
+    } else {
+        if (msg["message_type"]=="group"){
+            resp_msg["action"] = "upload_group_file";
+        } else {
+            resp_msg["action"] = "upload_private_file";
+        }
+        resp_msg["params"].erase("message");
+        resp_msg["params"].erase("message_type");
+        std::string filename = std::filesystem::path((*std::filesystem::directory_iterator("audio/"))).filename().string();
+        resp_msg["params"]["name"] = filename;
+        resp_msg["params"]["file"] = "/home/lemoechun/bot/audio/"+filename;
+    };
+    
+}
+
+void DownloadVideo(Toml &config,json &resp_msg,json &msg,std::string &arg){
+    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp4 --force-overwrites -o /home/lemoechun/bot/video/video.mp4 ").append(arg).c_str())) !=0 ){
+        resp_msg["params"]["message"][0]["type"] = "text";
+        resp_msg["params"]["message"][0]["data"]["text"] = "嗝儿～视频被吃掉了喵～";
+        return;
+    } else {
+        resp_msg["params"]["message"][0]["type"] = "video";
+        resp_msg["params"]["message"][0]["data"]["file"] = "/home/lemoechun/bot/video/video.mp4";
+        resp_msg["params"]["message"][0]["data"]["url"] = "file:///home/lemoechun/bot/video/video.mp4";
+    };
+    
+}
+
+void jm(Toml &config,json &resp_msg,json &msg,std::string &arg){
     std::string download_dir = "/home/lemoechun/bot/pdf/" + arg; 
     YAML::Node options;
     options["plugins"]["after_album"][0]["plugin"] = "img2pdf";
@@ -65,12 +102,14 @@ void get_file(json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["file"] = arg;
 }
 **/
-json ProcessMsg(json &msg){
+json ProcessMsg(Toml &config,json &msg){
     auto raw_message = std::string(msg["raw_message"]);
     std::string command,arg;
-    std::unordered_map<std::string, std::function<void(json&,json&,std::string&)>> commands;
+    std::unordered_map<std::string, std::function<void(Toml&,json&,json&,std::string&)>> commands;
     commands["about"] = about;
     commands["jm"] = jm;
+    commands["下载视频"] = DownloadVideo;
+    commands["下载音频"] = DownloadAudio;
 //    commands["get_file"] = get_file;
     json resp_msg;
     resp_msg["action"] = "send_msg";
@@ -88,7 +127,7 @@ json ProcessMsg(json &msg){
             command = raw_message.substr(1);
             arg = "";
         }
-        commands[command](resp_msg,msg,arg);
+        commands[command](config,resp_msg,msg,arg);
         return resp_msg;
     };
     if (msg["message"][0]["type"] == "json"){
