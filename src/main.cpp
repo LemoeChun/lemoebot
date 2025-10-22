@@ -16,8 +16,8 @@ using json = nlohmann::json;
 
 
 int main() {
-    auto config = toml::parse("config.toml");
-    uint port = config["Server"]["port"].value_or(3100);
+    auto config = toml::parse_file("config.toml");
+    uint port = config["Server"]["port"].value_or<uint>(3100);
     /* ws->getUserData returns one of these */
     struct PerSocketData {
         /* Fill with user data */

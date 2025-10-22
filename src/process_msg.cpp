@@ -21,10 +21,10 @@ void about(Toml& config,json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["message"][0]["data"]["text"] = "你好喵，这里是帕酱～";
 }
 void DownloadAudio(Toml &config,json &resp_msg,json &msg,std::string &arg){
-    std::string AudioDir = config["Bot"]["download_dir"].value_or("bot");
-    std::filesystem::remove_all("/home/lemoechun/bot/audio/");
+    std::string AudioDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "audio/";
+    std::filesystem::remove_all(AudioDir);
 
-    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp3 --force-overwrites -o /home/lemoechun/bot/audio/%\\(title\\)s.%\\(ext\\)s ").append(arg).c_str())) !=0 ){
+    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp3 --force-overwrites -o " + AudioDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
         resp_msg["params"]["message"][0]["type"] = "text";
         resp_msg["params"]["message"][0]["data"]["text"] = "嗝儿～音频被吃掉了喵～";
         return;
@@ -38,43 +38,44 @@ void DownloadAudio(Toml &config,json &resp_msg,json &msg,std::string &arg){
         resp_msg["params"].erase("message_type");
         std::string filename = std::filesystem::path((*std::filesystem::directory_iterator("audio/"))).filename().string();
         resp_msg["params"]["name"] = filename;
-        resp_msg["params"]["file"] = "/home/lemoechun/bot/audio/"+filename;
+        resp_msg["params"]["file"] = "AudioDir"+filename;
     };
     
 }
 
 void DownloadVideo(Toml &config,json &resp_msg,json &msg,std::string &arg){
-    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp4 --force-overwrites -o /home/lemoechun/bot/video/video.mp4 ").append(arg).c_str())) !=0 ){
+    std::string VideoDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "video/";
+    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp4 --force-overwrites -o " + VideoDir +"video.mp4 " + arg).c_str())) !=0 ){
         resp_msg["params"]["message"][0]["type"] = "text";
         resp_msg["params"]["message"][0]["data"]["text"] = "嗝儿～视频被吃掉了喵～";
         return;
     } else {
         resp_msg["params"]["message"][0]["type"] = "video";
-        resp_msg["params"]["message"][0]["data"]["file"] = "/home/lemoechun/bot/video/video.mp4";
-        resp_msg["params"]["message"][0]["data"]["url"] = "file:///home/lemoechun/bot/video/video.mp4";
+        resp_msg["params"]["message"][0]["data"]["file"] = VideoDir + "video.mp4";
+        resp_msg["params"]["message"][0]["data"]["url"] = "file://" + VideoDir +"/video.mp4";
     };
     
 }
 
 void jm(Toml &config,json &resp_msg,json &msg,std::string &arg){
-    std::string download_dir = "/home/lemoechun/bot/pdf/" + arg; 
+    std::string JMDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "pdf/" + arg;
     YAML::Node options;
     options["plugins"]["after_album"][0]["plugin"] = "img2pdf";
-    options["plugins"]["after_album"][0]["kwargs"]["pdf_dir"] = download_dir;
+    options["plugins"]["after_album"][0]["kwargs"]["pdf_dir"] = JMDir;
     options["plugins"]["after_album"][0]["kwargs"]["filename_rule"] = "Aname";
     // options["plugins"]["after_album"][0]["kwargs"]["encrypt"]["password"] = "nyanyanya";
     std::ofstream jm_option_file("jm_option.yml");
     jm_option_file.clear();
     jm_option_file << options;
     jm_option_file.close();
-    std::filesystem::create_directories(download_dir);
+    std::filesystem::create_directories(JMDir);
     std::string jm_command = "jmcomic --option jm_option.yml " + arg;
     if ( (std::system(jm_command.data())) !=0 ){
         resp_msg["params"]["message"][0]["type"] = "text";
         resp_msg["params"]["message"][0]["data"]["text"] = "hentai！一天到晚看本子真是没救了喵";
         return;
     };
-    std::string filename = std::filesystem::path((*std::filesystem::directory_iterator("/home/lemoechun/bot/pdf/" + arg))).filename().string();
+    std::string filename = std::filesystem::path((*std::filesystem::directory_iterator(JMDir))).filename().string();
     if (msg["message_type"]=="group"){
         resp_msg["action"] = "upload_group_file";
     } else {
@@ -83,7 +84,7 @@ void jm(Toml &config,json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"].erase("message");
     resp_msg["params"].erase("message_type");
     resp_msg["params"]["name"] = filename;
-    resp_msg["params"]["file"] = download_dir + "/" + filename;
+    resp_msg["params"]["file"] = JMDir + "/" + filename;
     
     
 }

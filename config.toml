@@ -1,6 +1,5 @@
 [Server]
-Port = 3100
-
+Port=3100
 [Bot]
-Download_Dir =  "bot/"
+Download_Dir="bot/"
 
