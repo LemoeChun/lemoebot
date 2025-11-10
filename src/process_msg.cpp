@@ -103,8 +103,8 @@ void get_file(json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["file"] = arg;
 }
 **/
-json ProcessMsg(Toml &config,json &msg){
-    auto raw_message = std::string(msg["raw_message"]);
+void ProcessMsg(Toml &config,json &msg){
+    auto raw_message = std::string(msg["data"]["segments"][0]["data"]["text"]);
     std::string command,arg;
     std::unordered_map<std::string, std::function<void(Toml&,json&,json&,std::string&)>> commands;
     commands["about"] = about;
@@ -113,8 +113,6 @@ json ProcessMsg(Toml &config,json &msg){
     commands["下载音频"] = DownloadAudio;
 //    commands["get_file"] = get_file;
     json resp_msg;
-    resp_msg["action"] = "send_msg";
-    resp_msg["params"]["message_type"] = msg["message_type"];
     if (msg["message_type"]=="group"){
         resp_msg["params"]["group_id"] = msg["group_id"];
     }
@@ -129,7 +127,6 @@ json ProcessMsg(Toml &config,json &msg){
             arg = "";
         }
         commands[command](config,resp_msg,msg,arg);
-        return resp_msg;
     };
     if (msg["message"][0]["type"] == "json"){
         auto json_msg_data = nlohmann::json::parse(std::string(msg["message"][0]["data"]["data"]));
@@ -142,9 +139,7 @@ json ProcessMsg(Toml &config,json &msg){
         resp_msg["params"]["message"][0]["data"]["id"] = std::to_string(int(msg["message_id"])) ;
         resp_msg["params"]["message"][1]["type"] = "text" ;
         resp_msg["params"]["message"][1]["data"]["text"] = "标题： " + std::string(json_msg_data["meta"]["detail_1"]["desc"]) + "\n\n" + "链接： " + url;
-        return resp_msg;
     }
     
-    return nlohmann::json();
 }
 
