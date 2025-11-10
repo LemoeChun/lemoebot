@@ -1,5 +1,5 @@
 #include <toml++/toml.hpp>
 
-extern const toml::table& config;
+extern const toml::table &config;
 
 

@@ -1,6 +1,5 @@
 #include <string>
 #include <nlohmann/json.hpp>
-#include <toml++/impl/table.hpp>
 #include <toml++/toml.hpp>
 #include <HXLibs/net/client/HttpClient.hpp>
 #include <HXLibs/log/Log.hpp>
@@ -10,7 +9,7 @@
 
 using json = nlohmann::json;
 auto conf = toml::parse_file("config.toml") ;
-const toml::table& config = conf;
+const toml::table &config = conf;
 std::string url = config["Bot"]["Websocket_Push_URL"].value_or<std::string>("ws://127.0.0.1:3100/event");
 HX::coroutine::Task<> coMain(){
     HX::net::HttpClient cli{};
@@ -22,7 +21,7 @@ HX::coroutine::Task<> coMain(){
                     HX::log::hxLog.info("收到：\n",msg.dump(4));
                 }
                 if (msg["event_type"] == "message_receive"){
-                   ProcessMsg(config);
+                   ProcessMsg(msg);
                 }
             }
         );

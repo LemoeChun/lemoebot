@@ -1,5 +1,3 @@
-#include <cpr/cprtypes.h>
-#include <cpr/response.h>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -13,14 +11,14 @@
 #include <yaml-cpp/yaml.h>
 #include <cpr/cpr.h>
 
+#include "config.hpp"
 #include "process_msg.hpp"
 
-using Toml = toml::table;
-void about(Toml& config,json &resp_msg,json &msg,std::string &arg){
+void about(json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["message"][0]["type"] = "text";
     resp_msg["params"]["message"][0]["data"]["text"] = "你好喵，这里是帕酱～";
 }
-void DownloadAudio(Toml &config,json &resp_msg,json &msg,std::string &arg){
+void DownloadAudio(json &resp_msg,json &msg,std::string &arg){
     std::string AudioDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "audio/";
     std::filesystem::remove_all(AudioDir);
 
@@ -43,7 +41,7 @@ void DownloadAudio(Toml &config,json &resp_msg,json &msg,std::string &arg){
     
 }
 
-void DownloadVideo(Toml &config,json &resp_msg,json &msg,std::string &arg){
+void DownloadVideo(json &resp_msg,json &msg,std::string &arg){
     std::string VideoDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "video/";
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp4 --force-overwrites -o " + VideoDir +"video.mp4 " + arg).c_str())) !=0 ){
         resp_msg["params"]["message"][0]["type"] = "text";
@@ -57,7 +55,7 @@ void DownloadVideo(Toml &config,json &resp_msg,json &msg,std::string &arg){
     
 }
 
-void jm(Toml &config,json &resp_msg,json &msg,std::string &arg){
+void jm(json &resp_msg,json &msg,std::string &arg){
     std::string JMDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "pdf/" + arg;
     YAML::Node options;
     options["plugins"]["after_album"][0]["plugin"] = "img2pdf";
@@ -103,10 +101,10 @@ void get_file(json &resp_msg,json &msg,std::string &arg){
     resp_msg["params"]["file"] = arg;
 }
 **/
-void ProcessMsg(Toml &config,json &msg){
+void ProcessMsg(json &msg){
     auto raw_message = std::string(msg["data"]["segments"][0]["data"]["text"]);
     std::string command,arg;
-    std::unordered_map<std::string, std::function<void(Toml&,json&,json&,std::string&)>> commands;
+    std::unordered_map<std::string, std::function<void(json&,json&,std::string&)>> commands;
     commands["about"] = about;
     commands["jm"] = jm;
     commands["下载视频"] = DownloadVideo;
@@ -126,7 +124,7 @@ void ProcessMsg(Toml &config,json &msg){
             command = raw_message.substr(1);
             arg = "";
         }
-        commands[command](config,resp_msg,msg,arg);
+        commands[command](resp_msg,msg,arg);
     };
     if (msg["message"][0]["type"] == "json"){
         auto json_msg_data = nlohmann::json::parse(std::string(msg["message"][0]["data"]["data"]));

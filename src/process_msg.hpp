@@ -5,4 +5,4 @@
 
 using json = nlohmann::json;
 
-void ProcessMsg(toml::table &config,json &msg);
+void ProcessMsg(json &msg);
