@@ -13,50 +13,68 @@
 
 #include "config.hpp"
 #include "process_msg.hpp"
+#include "milky_api.hpp"
 
+namespace fs = std::filesystem;
 void about(json &resp_msg,json &msg,std::string &arg){
-    resp_msg["params"]["message"][0]["type"] = "text";
-    resp_msg["params"]["message"][0]["data"]["text"] = "你好喵，这里是帕酱～";
+    resp_msg["message"][0]["type"] = "text";
+    resp_msg["message"][0]["data"]["text"] = "你好喵，这里是帕酱～";
+    SendMsg(resp_msg);
 }
 void DownloadAudio(json &resp_msg,json &msg,std::string &arg){
-    std::string AudioDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "audio/";
-    std::filesystem::remove_all(AudioDir);
+    std::string AudioDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/audio/";
+    fs::remove_all(AudioDir);
 
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp3 --force-overwrites -o " + AudioDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
-        resp_msg["params"]["message"][0]["type"] = "text";
-        resp_msg["params"]["message"][0]["data"]["text"] = "嗝儿～音频被吃掉了喵～";
+        resp_msg["message"][0]["type"] = "text";
+        resp_msg["message"][0]["data"]["text"] = "嗝儿～音频被吃掉了喵～";
+        SendMsg(resp_msg);
         return;
     } else {
-        if (msg["message_type"]=="group"){
-            resp_msg["action"] = "upload_group_file";
-        } else {
-            resp_msg["action"] = "upload_private_file";
-        }
-        resp_msg["params"].erase("message");
-        resp_msg["params"].erase("message_type");
-        std::string filename = std::filesystem::path((*std::filesystem::directory_iterator("audio/"))).filename().string();
-        resp_msg["params"]["name"] = filename;
-        resp_msg["params"]["file"] = "AudioDir"+filename;
+        std::string filename = fs::path((*fs::directory_iterator(AudioDir))).filename().string();
+        resp_msg["file_name"] = filename;
+        resp_msg["file_uri"] = "file://" + AudioDir + filename;
+        UpLoadFile(resp_msg);
     };
     
 }
 
 void DownloadVideo(json &resp_msg,json &msg,std::string &arg){
-    std::string VideoDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "video/";
-    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp4 --force-overwrites -o " + VideoDir +"video.mp4 " + arg).c_str())) !=0 ){
-        resp_msg["params"]["message"][0]["type"] = "text";
-        resp_msg["params"]["message"][0]["data"]["text"] = "嗝儿～视频被吃掉了喵～";
+    std::string VideoDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/video/";
+    if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox --write-thumbnail --convert-thumbnails jpg -t mp4 --force-overwrites -o " + VideoDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
+        resp_msg["message"][0]["type"] = "text";
+        resp_msg["message"][0]["data"]["text"] = "嗝儿～视频被吃掉了喵～";
+        SendMsg(resp_msg);
         return;
     } else {
-        resp_msg["params"]["message"][0]["type"] = "video";
-        resp_msg["params"]["message"][0]["data"]["file"] = VideoDir + "video.mp4";
-        resp_msg["params"]["message"][0]["data"]["url"] = "file://" + VideoDir +"/video.mp4";
+        fs::remove_all(VideoDir);
+        auto files = fs::directory_iterator(VideoDir)
+            | std::views::filter([](const fs::directory_entry& entry) {
+              return entry.path().extension() == ".mp4";
+          })
+            | std::views::transform([](const fs::directory_entry& entry) {
+        return entry.path().filename().string();
+        });
+        std::string filename = *std::ranges::begin(files);
+        auto thumb = filename;
+        thumb.replace(thumb.length()-3,3,"jpg");
+        if (fs::file_size(VideoDir + "video.mp4") < 1000000){
+            resp_msg["message"][0]["type"] = "video";
+            resp_msg["message"][0]["data"]["uri"] = "file://" + VideoDir +filename;
+            resp_msg["message"][0]["data"]["thumb_uri"] = "file://" + VideoDir +thumb;
+            SendMsg(resp_msg);
+        } else {
+        resp_msg["file_name"] = filename;
+        resp_msg["file_uri"] = "AudioDir"+filename;
+        UpLoadFile(resp_msg);
+
+        }
     };
     
 }
 
 void jm(json &resp_msg,json &msg,std::string &arg){
-    std::string JMDir = config["Bot"]["download_dir"].value_or<std::string>("bot") + "pdf/" + arg;
+    std::string JMDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/pdf/" + arg;
     YAML::Node options;
     options["plugins"]["after_album"][0]["plugin"] = "img2pdf";
     options["plugins"]["after_album"][0]["kwargs"]["pdf_dir"] = JMDir;
@@ -66,23 +84,18 @@ void jm(json &resp_msg,json &msg,std::string &arg){
     jm_option_file.clear();
     jm_option_file << options;
     jm_option_file.close();
-    std::filesystem::create_directories(JMDir);
+    fs::create_directories(JMDir);
     std::string jm_command = "jmcomic --option jm_option.yml " + arg;
     if ( (std::system(jm_command.data())) !=0 ){
-        resp_msg["params"]["message"][0]["type"] = "text";
-        resp_msg["params"]["message"][0]["data"]["text"] = "hentai！一天到晚看本子真是没救了喵";
+        resp_msg["message"][0]["type"] = "text";
+        resp_msg["message"][0]["data"]["text"] = "hentai！一天到晚看本子真是没救了喵";
         return;
     };
-    std::string filename = std::filesystem::path((*std::filesystem::directory_iterator(JMDir))).filename().string();
-    if (msg["message_type"]=="group"){
-        resp_msg["action"] = "upload_group_file";
-    } else {
-        resp_msg["action"] = "upload_private_file";
-    }
-    resp_msg["params"].erase("message");
-    resp_msg["params"].erase("message_type");
-    resp_msg["params"]["name"] = filename;
-    resp_msg["params"]["file"] = JMDir + "/" + filename;
+    std::string filename = fs::path((*std::filesystem::directory_iterator(JMDir))).filename().string();
+    resp_msg["file_name"] = filename;
+    resp_msg["file_uri"] = "file://" + JMDir + "/" + filename;
+    UpLoadFile(resp_msg);
+    
     
     
 }
@@ -93,12 +106,12 @@ void get_file(json &resp_msg,json &msg,std::string &arg){
     } else {
         resp_msg["action"] = "upload_private_file";
     }
-    resp_msg["params"].erase("message");
-    resp_msg["params"].erase("message_type");
+    resp_msg.erase("message");
+    resp_msg.erase("message_type");
     
-    std::string filename = std::filesystem::path(arg).filename().string();
-    resp_msg["params"]["name"] = filename;
-    resp_msg["params"]["file"] = arg;
+    std::string filename = fs::path(arg).filename().string();
+    resp_msg["file_name"] = filename;
+    resp_msg["file_uri"] = arg;
 }
 **/
 void ProcessMsg(json &msg){
@@ -111,10 +124,11 @@ void ProcessMsg(json &msg){
     commands["下载音频"] = DownloadAudio;
 //    commands["get_file"] = get_file;
     json resp_msg;
-    if (msg["message_type"]=="group"){
-        resp_msg["params"]["group_id"] = msg["group_id"];
+    if (msg["data"].contains("group")){
+        resp_msg["group_id"] = msg["data"]["group"]["group_id"];
+    } else if(msg["data"].contains("friend")) {
+        resp_msg["user_id"] = msg["data"]["friend"]["user_id"];
     }
-        resp_msg["params"]["user_id"] = msg["user_id"];
     if (raw_message[0] == '>'){
         size_t first_space = raw_message.find(" ");
         if (first_space != std::string::npos){
@@ -133,10 +147,11 @@ void ProcessMsg(json &msg){
         std::cout << url << "\n";
         url = url.substr(0,url.find("?"));
         std::cout << url << "\n";
-        resp_msg["params"]["message"][0]["type"] = "reply" ;
-        resp_msg["params"]["message"][0]["data"]["id"] = std::to_string(int(msg["message_id"])) ;
-        resp_msg["params"]["message"][1]["type"] = "text" ;
-        resp_msg["params"]["message"][1]["data"]["text"] = "标题： " + std::string(json_msg_data["meta"]["detail_1"]["desc"]) + "\n\n" + "链接： " + url;
+        resp_msg["message"][0]["type"] = "reply" ;
+        resp_msg["message"][0]["data"]["message_seq"] = msg["data"]["message_seq"] ;
+        resp_msg["message"][1]["type"] = "text" ;
+        resp_msg["message"][1]["data"]["text"] = "标题： " + std::string(json_msg_data["meta"]["detail_1"]["desc"]) + "\n\n" + "链接： " + url;
+        SendMsg(resp_msg);
     }
     
 }

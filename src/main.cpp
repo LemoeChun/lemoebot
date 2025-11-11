@@ -10,7 +10,7 @@
 using json = nlohmann::json;
 auto conf = toml::parse_file("config.toml") ;
 const toml::table &config = conf;
-std::string url = config["Bot"]["Websocket_Push_URL"].value_or<std::string>("ws://127.0.0.1:3100/event");
+std::string url = config["Bot"]["Websockets_Push_URL"].value_or<std::string>("ws://127.0.0.1:3100/event");
 HX::coroutine::Task<> coMain(){
     HX::net::HttpClient cli{};
         try {

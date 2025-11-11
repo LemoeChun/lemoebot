@@ -1,5 +1,5 @@
 [Bot]
-Milky_API_URL = "ws://127.0.0.1:3100/api"
+Milky_API_URL = "http://127.0.0.1:3100/api"
 Websockets_Push_URL = "ws://127.0.0.1:3100/event"
 Download_Dir ="bot/"
 
