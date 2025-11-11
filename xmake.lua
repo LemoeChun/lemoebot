@@ -1,11 +1,10 @@
 add_rules("mode.debug", "mode.release")
-
+add_cxxflags("-fcoroutines")
 set_languages("c++26")
 target("lemoebot")
     set_kind("binary")
     add_files("src/*.cpp")
-    add_syslinks("cpr","liburing","yaml-cpp","curl")
-
+    add_syslinks("cpr","liburing","yaml-cpp")
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
 --
