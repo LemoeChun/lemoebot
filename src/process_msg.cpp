@@ -41,13 +41,13 @@ void DownloadAudio(json &resp_msg,json &msg,std::string &arg){
 
 void DownloadVideo(json &resp_msg,json &msg,std::string &arg){
     std::string VideoDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/video/";
+    fs::remove_all(VideoDir);
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox --write-thumbnail --convert-thumbnails jpg -t mp4 --force-overwrites -o " + VideoDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
         resp_msg["message"][0]["type"] = "text";
         resp_msg["message"][0]["data"]["text"] = "嗝儿～视频被吃掉了喵～";
         SendMsg(resp_msg);
         return;
     } else {
-        fs::remove_all(VideoDir);
         auto files = fs::directory_iterator(VideoDir)
             | std::views::filter([](const fs::directory_entry& entry) {
               return entry.path().extension() == ".mp4";
@@ -58,17 +58,19 @@ void DownloadVideo(json &resp_msg,json &msg,std::string &arg){
         std::string filename = *std::ranges::begin(files);
         auto thumb = filename;
         thumb.replace(thumb.length()-3,3,"jpg");
-        if (fs::file_size(VideoDir + "video.mp4") < 1000000){
+        std::cout << thumb << "\n" << filename << "\n" <<fs::file_size(VideoDir + filename) << "\n" ;
+/**
+        if (fs::file_size(VideoDir + filename) < 104850000){
             resp_msg["message"][0]["type"] = "video";
             resp_msg["message"][0]["data"]["uri"] = "file://" + VideoDir +filename;
             resp_msg["message"][0]["data"]["thumb_uri"] = "file://" + VideoDir +thumb;
             SendMsg(resp_msg);
-        } else {
+        } else { **/
         resp_msg["file_name"] = filename;
-        resp_msg["file_uri"] = "AudioDir"+filename;
+        resp_msg["file_uri"] = "file://" + VideoDir + filename;
         UpLoadFile(resp_msg);
 
-        }
+//        }
     };
     
 }
