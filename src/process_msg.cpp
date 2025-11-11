@@ -117,7 +117,6 @@ void get_file(json &resp_msg,json &msg,std::string &arg){
 }
 **/
 void ProcessMsg(json &msg){
-    auto raw_message = std::string(msg["data"]["segments"][0]["data"]["text"]);
     std::string command,arg;
     std::unordered_map<std::string, std::function<void(json&,json&,std::string&)>> commands;
     commands["about"] = about;
@@ -131,19 +130,22 @@ void ProcessMsg(json &msg){
     } else if(msg["data"].contains("friend")) {
         resp_msg["user_id"] = msg["data"]["friend"]["user_id"];
     }
-    if (raw_message[0] == '>'){
-        size_t first_space = raw_message.find(" ");
-        if (first_space != std::string::npos){
-            command = raw_message.substr(1,first_space-1);
-            arg = raw_message.substr(first_space+1);
-        } else {
-            command = raw_message.substr(1);
-            arg = "";
+    if (msg["data"]["segments"][0]["type"] == "text"){
+        auto raw_message = std::string(msg["data"]["segments"][0]["data"]["text"]);
+        if (raw_message[0] == '>'){
+            size_t first_space = raw_message.find(" ");
+            if (first_space != std::string::npos){
+                command = raw_message.substr(1,first_space-1);
+                arg = raw_message.substr(first_space+1);
+            } else {
+                command = raw_message.substr(1);
+                arg = "";
+            }
+            commands[command](resp_msg,msg,arg);
         }
-        commands[command](resp_msg,msg,arg);
-    };
-    if (msg["message"][0]["type"] == "json"){
-        auto json_msg_data = nlohmann::json::parse(std::string(msg["message"][0]["data"]["data"]));
+    } else if (msg["data"]["segments"][0]["type"] == "light_app"){
+        std::cout << "小程序！\n" ;
+        auto json_msg_data = nlohmann::json::parse(std::string(msg["data"]["segments"][0]["data"]["json_payload"]));
         std::cout<< json_msg_data.dump(4) << "\n";
         std::string url = cpr::Get(cpr::Url{json_msg_data["meta"]["detail_1"]["qqdocurl"]}).url.str();
         std::cout << url << "\n";
