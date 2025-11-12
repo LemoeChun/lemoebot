@@ -5,4 +5,4 @@
 
 using json = nlohmann::json;
 
-void ProcessMsg(json &msg);
+void ProcessMsg(const json &msg);

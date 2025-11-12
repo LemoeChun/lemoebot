@@ -16,12 +16,12 @@
 #include "milky_api.hpp"
 
 namespace fs = std::filesystem;
-void about(json &resp_msg,json &msg,std::string &arg){
+void about(json &resp_msg,const json &msg,std::string &arg){
     resp_msg["message"][0]["type"] = "text";
     resp_msg["message"][0]["data"]["text"] = "你好喵，这里是帕酱～";
     SendMsg(resp_msg);
 }
-void DownloadAudio(json &resp_msg,json &msg,std::string &arg){
+void DownloadAudio(json &resp_msg,const json &msg,std::string &arg){
     std::string AudioDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/audio/";
     fs::remove_all(AudioDir);
 
@@ -39,7 +39,7 @@ void DownloadAudio(json &resp_msg,json &msg,std::string &arg){
     
 }
 
-void DownloadVideo(json &resp_msg,json &msg,std::string &arg){
+void DownloadVideo(json &resp_msg,const json &msg,std::string &arg){
     std::string VideoDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/video/";
     fs::remove_all(VideoDir);
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox --write-thumbnail --convert-thumbnails jpg -t mp4 --force-overwrites -o " + VideoDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
@@ -75,7 +75,7 @@ void DownloadVideo(json &resp_msg,json &msg,std::string &arg){
     
 }
 
-void jm(json &resp_msg,json &msg,std::string &arg){
+void jm(json &resp_msg,const json &msg,std::string &arg){
     std::string JMDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/pdf/" + arg;
     YAML::Node options;
     options["plugins"]["after_album"][0]["plugin"] = "img2pdf";
@@ -102,7 +102,7 @@ void jm(json &resp_msg,json &msg,std::string &arg){
     
 }
 /**
-void get_file(json &resp_msg,json &msg,std::string &arg){
+void get_file(json &resp_msg,const json &msg,std::string &arg){
     if (msg["message_type"]=="group"){
         resp_msg["action"] = "upload_group_file";
     } else {
@@ -116,9 +116,9 @@ void get_file(json &resp_msg,json &msg,std::string &arg){
     resp_msg["file_uri"] = arg;
 }
 **/
-void ProcessMsg(json &msg){
+void ProcessMsg(const json &msg){
     std::string command,arg;
-    std::unordered_map<std::string, std::function<void(json&,json&,std::string&)>> commands;
+    std::unordered_map<std::string, std::function<void(json&,const json&,std::string&)>> commands;
     commands["about"] = about;
     commands["jm"] = jm;
     commands["下载视频"] = DownloadVideo;

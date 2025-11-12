@@ -1,5 +1,7 @@
+#include <future>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <thread>
 #include <toml++/toml.hpp>
 #include <HXLibs/net/client/HttpClient.hpp>
 #include <HXLibs/log/Log.hpp>
@@ -16,12 +18,14 @@ HX::coroutine::Task<> coMain(){
         try {
             co_await cli.coWsLoop(url,
                 [](HX::net::WebSocketClient ws) -> HX::coroutine::Task<> {
-                auto msg = json::parse(co_await ws.recvText());
-                if (!((msg["post_type"] == "meta_event") && (msg["meta_event_type"] == "heartbeat"))){
-                    HX::log::hxLog.info("收到：\n",msg.dump(4));
-                }
-                if (msg["event_type"] == "message_receive"){
-                   ProcessMsg(msg);
+                while (true){
+                    auto msg = json::parse(co_await ws.recvText());
+                    if (!((msg["post_type"] == "meta_event") && (msg["meta_event_type"] == "heartbeat"))){
+                        HX::log::hxLog.info("收到：\n",msg.dump(4));
+                    }
+                    if (msg["event_type"] == "message_receive"){
+                       std::thread(ProcessMsg,msg).detach();
+                    }
                 }
             }
         );
@@ -32,8 +36,6 @@ HX::coroutine::Task<> coMain(){
 
 
 int main() {
-    while (true){
-        coMain().runSync();
-    }
+    coMain().runSync();
 }
 
