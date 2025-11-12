@@ -1,8 +1,9 @@
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 
-void about(const nlohmann::json &msg, std::string &arg);
-void help(const nlohmann::json &msg, std::string &arg);
-void DownloadVideo(const nlohmann::json &msg, std::string &arg);
-void DownloadAudio(const nlohmann::json &msg, std::string &arg);
-void jm(const nlohmann::json &msg, std::string &arg);
+void about(nlohmann::json &resp_msg, const nlohmann::json &msg, std::string &arg);
+void help(nlohmann::json &resp_msg, const nlohmann::json &msg, std::string &arg);
+void DownloadVideo(nlohmann::json &resp_msg, const nlohmann::json &msg, std::string &arg);
+void DownloadAudio(nlohmann::json &resp_msg, const nlohmann::json &msg, std::string &arg);
+void jm(nlohmann::json &resp_msg, const nlohmann::json &msg, std::string &arg);

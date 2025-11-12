@@ -1,14 +1,29 @@
 #include <nlohmann/json.hpp>
 #include <cpr/cpr.h>
+#include <yaml-cpp/yaml.h>
+
+#include <filesystem>
 
 #include "config.hpp"
+#include "milky_api.hpp"
+
 
 using json = nlohmann::json; 
-    
+namespace fs = std::filesystem; 
 
 void about(json &resp_msg,const json &msg,std::string &arg){
     resp_msg["message"][0]["type"] = "text";
     resp_msg["message"][0]["data"]["text"] = "你好喵，这里是帕酱～";
+    SendMsg(resp_msg);
+}
+void help(json &resp_msg,const json &msg,std::string &arg){
+    resp_msg["message"][0]["type"] = "text";
+    resp_msg["message"][0]["data"]["text"] = 
+"   `命令列表` \n\
+>下载视频 [视频链接] \n\
+>下载音频 [视频链接] \n\
+>jm [神秘小数字] \n\
+>ai [你的prompt] ";
     SendMsg(resp_msg);
 }
 void DownloadAudio(json &resp_msg,const json &msg,std::string &arg){
@@ -48,7 +63,7 @@ void DownloadVideo(json &resp_msg,const json &msg,std::string &arg){
         std::string filename = *std::ranges::begin(files);
         auto thumb = filename;
         thumb.replace(thumb.length()-3,3,"jpg");
-        std::cout << thumb << "\n" << filename << "\n" <<fs::file_size(VideoDir + filename) << "\n" ;
+//        std::cout << thumb << "\n" << filename << "\n" <<fs::file_size(VideoDir + filename) << "\n" ;
 /**
         if (fs::file_size(VideoDir + filename) < 104850000){
             resp_msg["message"][0]["type"] = "video";

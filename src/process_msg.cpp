@@ -1,6 +1,4 @@
 #include <cstddef>
-#include <filesystem>
-#include <fstream>
 #include <functional>
 #include <iostream>
 #include <nlohmann/json_fwd.hpp>
@@ -8,7 +6,6 @@
 #include <unordered_map>
 #include <cstdlib>
 
-#include <yaml-cpp/yaml.h>
 #include <cpr/cpr.h>
 
 #include "config.hpp"
@@ -16,11 +13,11 @@
 #include "process_msg.hpp"
 #include "milky_api.hpp"
 
-namespace fs = std::filesystem;
 void ProcessMsg(const json &msg){
     std::string command,arg;
     std::unordered_map<std::string, std::function<void(json&,const json&,std::string&)>> commands;
     commands["about"] = about;
+    commands["help"] = help;
     commands["jm"] = jm;
     commands["下载视频"] = DownloadVideo;
     commands["下载音频"] = DownloadAudio;
@@ -42,6 +39,7 @@ void ProcessMsg(const json &msg){
                 command = raw_message.substr(1);
                 arg = "";
             }
+        if (!commands.contains(command)) return;
             commands[command](resp_msg,msg,arg);
         }
     } else if (msg["data"]["segments"][0]["type"] == "light_app"){
