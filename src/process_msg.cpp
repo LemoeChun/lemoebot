@@ -21,6 +21,7 @@ void ProcessMsg(const json &msg){
     commands["jm"] = jm;
     commands["下载视频"] = DownloadVideo;
     commands["下载音频"] = DownloadAudio;
+    commands["塔罗牌"] = batarot;
 //    commands["get_file"] = get_file;
     json resp_msg;
     if (msg["data"].contains("group")){
@@ -30,7 +31,7 @@ void ProcessMsg(const json &msg){
     }
     if (msg["data"]["segments"][0]["type"] == "text"){
         auto raw_message = std::string(msg["data"]["segments"][0]["data"]["text"]);
-        if (raw_message[0] == '>'){
+        if (raw_message[0] == '>' || raw_message[0] == '#' || raw_message[0] == '$'){
             size_t first_space = raw_message.find(" ");
             if (first_space != std::string::npos){
                 command = raw_message.substr(1,first_space-1);

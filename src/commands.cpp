@@ -18,16 +18,17 @@ void about(json &resp_msg,const json &msg,std::string &arg){
 }
 void help(json &resp_msg,const json &msg,std::string &arg){
     resp_msg["message"][0]["type"] = "text";
-    resp_msg["message"][0]["data"]["text"] = 
-"   `命令列表` \n\
->下载视频 [视频链接] \n\
->下载音频 [视频链接] \n\
->jm [神秘小数字] \n\
->ai [你的prompt] ";
+    resp_msg["message"][0]["data"]["text"] =
+        "命令提示符可以用`>`,`#`，`$`\n"
+        "   `命令列表` \n"
+        ">下载视频 [视频链接] \n"
+        ">下载音频 [视频链接] \n"
+        ">jm [神秘小数字] \n"
+        ">ai [你的prompt] ";
     SendMsg(resp_msg);
 }
 void DownloadAudio(json &resp_msg,const json &msg,std::string &arg){
-    std::string AudioDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/audio/";
+    std::string AudioDir = config["Bot"]["Work_Dir"].value_or<std::string>("bot") + "/audio/";
     fs::remove_all(AudioDir);
 
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp3 --force-overwrites -o " + AudioDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
@@ -45,7 +46,7 @@ void DownloadAudio(json &resp_msg,const json &msg,std::string &arg){
 }
 
 void DownloadVideo(json &resp_msg,const json &msg,std::string &arg){
-    std::string VideoDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/video/";
+    std::string VideoDir = config["Bot"]["Work_Dir"].value_or<std::string>("bot") + "/video/";
     fs::remove_all(VideoDir);
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox --write-thumbnail --convert-thumbnails jpg -t mp4 --force-overwrites -o " + VideoDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
         resp_msg["message"][0]["type"] = "text";
@@ -81,7 +82,7 @@ void DownloadVideo(json &resp_msg,const json &msg,std::string &arg){
 }
 
 void jm(json &resp_msg,const json &msg,std::string &arg){
-    std::string JMDir = config["Bot"]["Download_Dir"].value_or<std::string>("bot") + "/pdf/" + arg;
+    std::string JMDir = config["Bot"]["Work_Dir"].value_or<std::string>("bot") + "/pdf/" + arg;
     YAML::Node options;
     options["plugins"]["after_album"][0]["plugin"] = "img2pdf";
     options["plugins"]["after_album"][0]["kwargs"]["pdf_dir"] = JMDir;
