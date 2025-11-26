@@ -28,7 +28,7 @@ void help(json &resp_msg,const json &msg,std::string &arg){
     SendMsg(resp_msg);
 }
 void DownloadAudio(json &resp_msg,const json &msg,std::string &arg){
-    std::string AudioDir = config["Bot"]["Work_Dir"].value_or<std::string>("bot") + "/audio/";
+    std::string AudioDir = WORK_DIR + "/audio/";
     fs::remove_all(AudioDir);
 
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox -t mp3 --force-overwrites -o " + AudioDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
@@ -46,7 +46,7 @@ void DownloadAudio(json &resp_msg,const json &msg,std::string &arg){
 }
 
 void DownloadVideo(json &resp_msg,const json &msg,std::string &arg){
-    std::string VideoDir = config["Bot"]["Work_Dir"].value_or<std::string>("bot") + "/video/";
+    std::string VideoDir = WORK_DIR + "/video/";
     fs::remove_all(VideoDir);
     if ( (std::system(std::string("yt-dlp --cookies-from-browser firefox --write-thumbnail --convert-thumbnails jpg -t mp4 --force-overwrites -o " + VideoDir +"%\\(title\\)s.%\\(ext\\)s " + arg).c_str())) !=0 ){
         resp_msg["message"][0]["type"] = "text";
@@ -82,7 +82,7 @@ void DownloadVideo(json &resp_msg,const json &msg,std::string &arg){
 }
 
 void jm(json &resp_msg,const json &msg,std::string &arg){
-    std::string JMDir = config["Bot"]["Work_Dir"].value_or<std::string>("bot") + "/pdf/" + arg;
+    std::string JMDir = WORK_DIR + "/pdf/" + arg;
     YAML::Node options;
     options["plugins"]["after_album"][0]["plugin"] = "img2pdf";
     options["plugins"]["after_album"][0]["kwargs"]["pdf_dir"] = JMDir;
