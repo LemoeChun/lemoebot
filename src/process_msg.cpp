@@ -45,16 +45,17 @@ void ProcessMsg(const json &msg){
         }
     } else if (msg["data"]["segments"][0]["type"] == "light_app"){
         std::cout << "小程序！\n" ;
-        auto json_msg_data = nlohmann::json::parse(std::string(msg["data"]["segments"][0]["data"]["json_payload"]));
-        std::cout<< json_msg_data.dump(4) << "\n";
-        std::string url = cpr::Get(cpr::Url{json_msg_data["meta"]["detail_1"]["qqdocurl"]}).url.str();
+        auto light_app = nlohmann::json::parse(std::string(msg["data"]["segments"][0]["data"]["json_payload"]));
+        std::cout<< light_app.dump(4) << "\n";
+        std::string url = cpr::Get(cpr::Url{ 
+                (light_app["view"] == "news") ? light_app["jumpUrl"] : light_app["meta"]["detail_1"]["qqdocurl"]}).url.str();
         std::cout << url << "\n";
         url = url.substr(0,url.find("?"));
         std::cout << url << "\n";
         resp_msg["message"][0]["type"] = "reply" ;
         resp_msg["message"][0]["data"]["message_seq"] = msg["data"]["message_seq"] ;
         resp_msg["message"][1]["type"] = "text" ;
-        resp_msg["message"][1]["data"]["text"] = "标题： " + std::string(json_msg_data["meta"]["detail_1"]["desc"]) + "\n\n" + "链接： " + url;
+        resp_msg["message"][1]["data"]["text"] = "标题： " + std::string(light_app["meta"]["detail_1"]["desc"]) + "\n\n" + "链接： " + url;
         SendMsg(resp_msg);
     }
     
